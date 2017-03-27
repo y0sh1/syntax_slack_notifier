@@ -26,7 +26,7 @@ class Events:
     def __init__(self, events_url):
         self.events_url = events_url
         events = self.get_events()
-        print(events.read())
+        # print(events.read())
 
     def get_events(self):
         return urllib.request.urlopen(self.events_url)
@@ -35,7 +35,6 @@ class Events:
 if __name__ == "__main__":
     config = ConfigParser()
     config.read('config.ini')
-    print()
     syntax_events = Events(config['syntax']['calendar_url'])
 
     syntax_slack = Notifier(config['slack']['token'])
