@@ -3,11 +3,9 @@ import urllib.request
 from configparser import ConfigParser
 from ics import Calendar
 import arrow
-from datetime import timedelta
-from datetime import datetime
+
 
 class Notifier:
-
     slack_token = ""
 
     def __init__(self, slack_token):
@@ -28,8 +26,8 @@ class Notifier:
         for event in events:
             self.notify([event.name + " begint om " + str(event.begin.datetime)])
 
-class Events:
 
+class Events:
     events_url = ""
 
     def __init__(self, events_url):
@@ -39,18 +37,20 @@ class Events:
         calendar = Calendar(urllib.request.urlopen(self.events_url).read().decode('iso-8859-1'))
         return calendar.events
 
-    def get_future_events(self, this_week = False):
+    def get_future_events(self, this_week=False):
         events = self.get_events()
         future_events = []
         current_time = arrow.utcnow()
         this_monday = current_time.replace(days=-(current_time.weekday()), hour=0, minute=0, second=0, microsecond=0)
-        this_sunday = current_time.replace(days=+(6-(current_time.weekday())), hour=23, minute=59, second=59, microsecond=0)
+        this_sunday = current_time.replace(days=+(6 - (current_time.weekday())), hour=23, minute=59, second=59,
+                                           microsecond=0)
         for unique_event in events:
             if this_week and unique_event.begin >= this_monday and unique_event.end <= this_sunday:
                 future_events.append(unique_event)
             elif unique_event.begin.datetime >= current_time and not this_week:
                 future_events.append(unique_event)
         return future_events
+
 
 if __name__ == "__main__":
     config = ConfigParser()
