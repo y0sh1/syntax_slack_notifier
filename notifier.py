@@ -1,6 +1,8 @@
 from slackclient import SlackClient
 import urllib.request
 from configparser import ConfigParser
+from ics import Calendar
+import arrow
 
 class Notifier:
 
@@ -9,15 +11,20 @@ class Notifier:
     def __init__(self, slack_token):
         self.slack_token = slack_token
 
-    def notify(self, message):
+    def notify(self, messages):
         slack = SlackClient(token=self.slack_token)
-        slack.api_call(
-            "chat.postMessage",
-            username="Syntax Notification Bot",
-            icon_emoji=":robot_face:",
-            channel="#testing",
-            text=message
-        )
+        for message in messages:
+            slack.api_call(
+                "chat.postMessage",
+                username="Syntax Event Bot",
+                icon_emoji=":calendar:",
+                channel="#testing",
+                text=message
+            )
+
+    def notify_events(self, events):
+        for event in events:
+            self.notify([event.name + " begint om " + str(event.begin.datetime)])
 
 class Events:
 
@@ -25,17 +32,24 @@ class Events:
 
     def __init__(self, events_url):
         self.events_url = events_url
-        events = self.get_events()
-        # print(events.read())
 
     def get_events(self):
-        return urllib.request.urlopen(self.events_url)
+        calendar = Calendar(urllib.request.urlopen(self.events_url).read().decode('iso-8859-1'))
+        return calendar.events
 
+    def get_future_events(self):
+        events = self.get_events()
+        future_events = []
+        current_time = arrow.utcnow()
+        for unique_event in events:
+            if unique_event.begin.datetime >= current_time:
+                future_events.append(unique_event)
+        return future_events
 
 if __name__ == "__main__":
     config = ConfigParser()
     config.read('config.ini')
-    syntax_events = Events(config['syntax']['calendar_url'])
+    syntax_events = Events(config['syntax']['calendar_url']).get_future_events()
 
     syntax_slack = Notifier(config['slack']['token'])
-    syntax_slack.notify("piew piew :tada:")
+    syntax_slack.notify_events(syntax_events)
