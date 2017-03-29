@@ -3,6 +3,8 @@ import urllib.request
 from configparser import ConfigParser
 from ics import Calendar
 import arrow
+from datetime import timedelta
+from datetime import datetime
 
 class Notifier:
 
@@ -37,19 +39,23 @@ class Events:
         calendar = Calendar(urllib.request.urlopen(self.events_url).read().decode('iso-8859-1'))
         return calendar.events
 
-    def get_future_events(self):
+    def get_future_events(self, this_week = False):
         events = self.get_events()
         future_events = []
         current_time = arrow.utcnow()
+        this_monday = current_time.replace(days=-(current_time.weekday()), hour=0, minute=0, second=0, microsecond=0)
+        this_sunday = current_time.replace(days=+(6-(current_time.weekday())), hour=23, minute=59, second=59, microsecond=0)
         for unique_event in events:
-            if unique_event.begin.datetime >= current_time:
+            if this_week and unique_event.begin >= this_monday and unique_event.end <= this_sunday:
+                future_events.append(unique_event)
+            elif unique_event.begin.datetime >= current_time and not this_week:
                 future_events.append(unique_event)
         return future_events
 
 if __name__ == "__main__":
     config = ConfigParser()
     config.read('config.ini')
-    syntax_events = Events(config['syntax']['calendar_url']).get_future_events()
+    syntax_events = Events(config['syntax']['calendar_url']).get_future_events(this_week=True)
 
     syntax_slack = Notifier(config['slack']['token'])
     syntax_slack.notify_events(syntax_events)
