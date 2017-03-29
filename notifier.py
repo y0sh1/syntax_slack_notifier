@@ -93,9 +93,9 @@ if __name__ == "__main__":
 
     syntax_slack = Notifier(config['slack']['username'], config['slack']['channel'], config['slack']['icon'],
                             config['slack']['token'])
-    if args.all:
+    if args.all and syntax_events:
         syntax_slack.notify_events(syntax_events, announcement="Dit zijn alle aankomende events:")
-    if args.week:
+    if args.week and syntax_events_this_week:
         syntax_slack.notify_events(syntax_events_this_week, announcement="Deze week zijn de volgende events:")
-    if args.next:
+    if args.next and syntax_next_event:
         syntax_slack.notify_events(syntax_next_event, announcement="Dit is het volgende event:")
