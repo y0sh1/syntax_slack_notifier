@@ -1,5 +1,8 @@
 [slack]
 token =
+channel =
+username = Syntax Event Bot
+icon = :sad:
 
 [syntax]
 calendar_url =
