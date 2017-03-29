@@ -3,6 +3,7 @@ import urllib.request
 from configparser import ConfigParser
 from ics import Calendar
 import arrow
+import argparse
 
 
 class Notifier:
@@ -79,12 +80,22 @@ class Events:
 if __name__ == "__main__":
     config = ConfigParser()
     config.read('config.ini')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--week", help="Notify week summary of events of this week", action="store_true")
+    parser.add_argument("--next", help="Notify next event", action="store_true")
+    parser.add_argument("--all", help="Notify all upcoming events", action="store_true")
+    args = parser.parse_args()
+
     syntax_events_this_week = Events(config['syntax']['calendar_url']).get_future_events(this_week=True)
     syntax_events = Events(config['syntax']['calendar_url']).get_future_events()
     syntax_next_event = Events(config['syntax']['calendar_url']).get_next_event()
 
     syntax_slack = Notifier(config['slack']['username'], config['slack']['channel'], config['slack']['icon'],
                             config['slack']['token'])
-    syntax_slack.notify_events(syntax_events, announcement="Dit zijn alle aankomende events:")
-    syntax_slack.notify_events(syntax_events_this_week, announcement="Deze week zijn de volgende events:")
-    syntax_slack.notify_events(syntax_next_event, announcement="Dit is het volgende event:")
+    if args.all:
+        syntax_slack.notify_events(syntax_events, announcement="Dit zijn alle aankomende events:")
+    if args.week:
+        syntax_slack.notify_events(syntax_events_this_week, announcement="Deze week zijn de volgende events:")
+    if args.next:
+        syntax_slack.notify_events(syntax_next_event, announcement="Dit is het volgende event:")
