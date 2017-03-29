@@ -7,18 +7,26 @@ import arrow
 
 class Notifier:
     slack_token = ""
+    username = "USERNAME NOT SET"
+    channel = ""
+    icon = ":sad:"
 
-    def __init__(self, slack_token):
+    def __init__(self, username, channel, icon, slack_token):
         self.slack_token = slack_token
+        self.username = username
+        self.channel = "#" + channel
+        self.icon = icon
 
-    def notify(self, messages, attachments=[]):
+    def notify(self, messages, attachments=None):
+        if attachments is None:
+            attachments = []
         slack = SlackClient(token=self.slack_token)
         for message in messages:
             slack.api_call(
                 "chat.postMessage",
-                username="Syntax Event Bot",
-                icon_emoji=":calendar:",
-                channel="#testing",
+                username=self.username,
+                icon_emoji=self.icon,
+                channel=self.channel,
                 text=message,
                 attachments=attachments
             )
@@ -27,7 +35,8 @@ class Notifier:
         event_attachments = []
         for event in events:
             event_attachments.append({"title": event.name,
-                                      "text": str(event.begin.format('DD-MM-YYYY @ HH:mm')) + ' Tot ' + str(event.end.format('DD-MM-YYYY @ HH:mm')) + '\nLocatie: ' + event.location,
+                                      "text": str(event.begin.format('DD-MM-YYYY @ HH:mm')) + ' Tot ' + str(
+                                          event.end.format('DD-MM-YYYY @ HH:mm')) + '\nLocatie: ' + event.location,
                                       "color": "#57B5E8"})
         self.notify([announcement], event_attachments)
 
@@ -57,15 +66,14 @@ class Events:
         return future_events
 
     def get_next_event(self):
-        events=self.get_future_events()
-        last_event=None
+        events = self.get_future_events()
+        last_event = None
         for unique_event in events:
             if not last_event:
                 last_event = unique_event
             if unique_event.begin < last_event.begin:
                 last_event = unique_event
         return [last_event]
-
 
 
 if __name__ == "__main__":
@@ -75,7 +83,8 @@ if __name__ == "__main__":
     syntax_events = Events(config['syntax']['calendar_url']).get_future_events()
     syntax_next_event = Events(config['syntax']['calendar_url']).get_next_event()
 
-    syntax_slack = Notifier(config['slack']['token'])
+    syntax_slack = Notifier(config['slack']['username'], config['slack']['channel'], config['slack']['icon'],
+                            config['slack']['token'])
     syntax_slack.notify_events(syntax_events, announcement="Dit zijn alle aankomende events:")
     syntax_slack.notify_events(syntax_events_this_week, announcement="Deze week zijn de volgende events:")
     syntax_slack.notify_events(syntax_next_event, announcement="Dit is het volgende event:")
